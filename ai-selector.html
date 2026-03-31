@@ -1,0 +1,178 @@
+<html>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: var(--font-sans); background: transparent; }
+.container { max-width: 100%; margin: 0 auto; padding: 2rem; }
+.header { text-align: center; margin-bottom: 3rem; }
+.header h1 { font-size: 36px; font-weight: 600; color: var(--color-text-primary); margin-bottom: 8px; letter-spacing: 1px; }
+.header p { font-size: 16px; color: var(--color-text-primary); font-weight: 500; letter-spacing: 0.5px; }
+.main-layout { display: grid; grid-template-columns: 1fr 1.2fr; gap: 4rem; align-items: flex-start; }
+.left-section { display: flex; flex-direction: column; gap: 2rem; }
+.selector-item { display: flex; flex-direction: column; gap: 1rem; }
+.selector-label { font-size: 16px; font-weight: 600; color: var(--color-text-primary); text-transform: uppercase; border-bottom: 2px solid var(--color-text-primary); padding-bottom: 8px; display: inline-block; }
+.selector-box { position: relative; }
+select { width: 100%; padding: 10px 16px; border: 1px solid var(--color-text-primary); border-radius: 4px; background: var(--color-background-primary); font-size: 13px; color: var(--color-text-primary); cursor: pointer; appearance: none; padding-right: 40px; min-height: 40px; line-height: 1.4; }
+select:hover { border-color: var(--color-text-primary); background-color: var(--color-background-secondary); }
+select:focus { outline: none; border-color: var(--color-text-primary); box-shadow: none; }
+.selector-box::after { content: '▼'; position: absolute; right: 12px; top: 50%; transform: translateY(-50%); pointer-events: none; font-size: 10px; color: var(--color-text-primary); }
+.recommendation-section { margin-top: 2rem; }
+.recommendation-title { font-size: 16px; font-weight: 600; color: var(--color-text-primary); text-transform: uppercase; border-bottom: 2px solid var(--color-text-primary); padding-bottom: 8px; display: inline-block; margin-bottom: 1rem; }
+.recommendation-display { display: flex; flex-direction: column; gap: 12px; }
+.ai-card { background: transparent; border: none; border-bottom: 1px solid var(--color-border-tertiary); padding: 12px 0; display: flex; justify-content: space-between; align-items: center; transition: all 0.2s ease; }
+.ai-card.primary { border-bottom: 2px solid var(--color-text-primary); }
+.ai-card.primary .ai-name { color: var(--color-text-primary); font-weight: 600; }
+.ai-card.secondary { }
+.ai-card.secondary .ai-name { color: var(--color-text-primary); }
+.ai-name { font-size: 14px; font-weight: 500; color: var(--color-text-primary); }
+.ai-rank { font-size: 12px; color: var(--color-text-primary); padding: 0; background: transparent; border-radius: 0; }
+.ai-rank.best { color: var(--color-text-primary); background: transparent; font-weight: 500; }
+.empty-state { text-align: center; padding: 32px 0; color: var(--color-text-secondary); font-size: 14px; }
+.right-section { display: flex; align-items: center; justify-content: center; min-height: 400px; background: var(--color-background-secondary); border-radius: 8px; border: 1px dashed var(--color-border-tertiary); }
+.placeholder-text { color: var(--color-text-secondary); font-size: 14px; text-align: center; }
+@media (max-width: 800px) {
+  .main-layout { grid-template-columns: 1fr; gap: 2rem; }
+  .right-section { min-height: 300px; }
+}
+</style>
+
+<div class="container">
+  <div class="header">
+    <h1>AI TOOL SELECTOR</h1>
+    <p>FIND THE RIGHT AI TOOL FOR YOU</p>
+  </div>
+
+  <div class="main-layout">
+    <div class="left-section">
+      <div class="selector-item">
+        <label class="selector-label">I have:</label>
+        <div class="selector-box">
+          <select id="input-select">
+            <option value="">Select input type</option>
+            <option value="sketch">A Sketch</option>
+            <option value="render">A Render</option>
+            <option value="nothing">Nothing</option>
+            <option value="description">A Written Description</option>
+            <option value="pictures">Pictures</option>
+            <option value="3dscreenshot">A 3D Model Screenshot</option>
+            <option value="line">A Line Drawing</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="selector-item">
+        <label class="selector-label">I want:</label>
+        <div class="selector-box">
+          <select id="output-select">
+            <option value="">Select output type</option>
+            <option value="sketch">A Sketch</option>
+            <option value="render">A Render</option>
+            <option value="realistic">A Realistic Image</option>
+            <option value="line">A Line Drawing</option>
+            <option value="model">A 3D Model</option>
+            <option value="animation">A Short Animation or GIF</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="recommendation-section">
+        <div class="recommendation-title">I should use:</div>
+        <div class="recommendation-display" id="recommendations">
+          <div class="empty-state">Select both input and output to see recommendations</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="right-section">
+    </div>
+  </div>
+</div>
+
+<script>
+const getRecommendations = (input, output) => {
+  const matrix = {
+    'sketch:render': { primary: 'MidJourney', secondary: ['Adobe Firefly', 'NanoBanana/Gemini'] },
+    'sketch:realistic': { primary: 'MidJourney', secondary: ['Adobe Firefly'] },
+    'sketch:line': { primary: 'Claude', secondary: ['ChatGPT'] },
+    'sketch:model': { primary: 'Claude', secondary: ['ChatGPT', 'NanoBanana/Gemini'] },
+    'sketch:animation': { primary: 'MidJourney', secondary: ['NanoBanana/Gemini'] },
+    
+    'render:sketch': { primary: 'Claude', secondary: ['ChatGPT'] },
+    'render:realistic': { primary: 'MidJourney', secondary: ['Adobe Firefly'] },
+    'render:line': { primary: 'Claude', secondary: ['ChatGPT'] },
+    'render:model': { primary: 'Claude', secondary: ['NanoBanana/Gemini'] },
+    'render:animation': { primary: 'MidJourney', secondary: ['NanoBanana/Gemini'] },
+    
+    'nothing:render': { primary: 'MidJourney', secondary: ['Adobe Firefly', 'NanoBanana/Gemini'] },
+    'nothing:sketch': { primary: 'MidJourney', secondary: ['Claude', 'NanoBanana/Gemini'] },
+    'nothing:realistic': { primary: 'MidJourney', secondary: ['Adobe Firefly'] },
+    'nothing:line': { primary: 'Claude', secondary: ['ChatGPT', 'NanoBanana/Gemini'] },
+    'nothing:model': { primary: 'Claude', secondary: ['ChatGPT', 'NanoBanana/Gemini'] },
+    'nothing:animation': { primary: 'MidJourney', secondary: ['NanoBanana/Gemini'] },
+    
+    'description:render': { primary: 'MidJourney', secondary: ['Adobe Firefly'] },
+    'description:realistic': { primary: 'MidJourney', secondary: ['Adobe Firefly'] },
+    'description:sketch': { primary: 'Claude', secondary: ['ChatGPT', 'NanoBanana/Gemini'] },
+    'description:line': { primary: 'Claude', secondary: ['ChatGPT'] },
+    'description:model': { primary: 'Claude', secondary: ['ChatGPT', 'NanoBanana/Gemini'] },
+    'description:animation': { primary: 'MidJourney', secondary: ['NanoBanana/Gemini'] },
+    
+    'pictures:render': { primary: 'Adobe Firefly', secondary: ['MidJourney'] },
+    'pictures:realistic': { primary: 'MidJourney', secondary: ['Adobe Firefly'] },
+    'pictures:sketch': { primary: 'NanoBanana/Gemini', secondary: ['Claude', 'ChatGPT'] },
+    'pictures:line': { primary: 'Claude', secondary: ['ChatGPT'] },
+    'pictures:model': { primary: 'Claude', secondary: ['ChatGPT', 'NanoBanana/Gemini'] },
+    'pictures:animation': { primary: 'MidJourney', secondary: ['Adobe Firefly', 'NanoBanana/Gemini'] },
+    
+    '3dscreenshot:render': { primary: 'MidJourney', secondary: ['Adobe Firefly'] },
+    '3dscreenshot:realistic': { primary: 'MidJourney', secondary: ['Adobe Firefly'] },
+    '3dscreenshot:sketch': { primary: 'NanoBanana/Gemini', secondary: ['Claude', 'ChatGPT'] },
+    '3dscreenshot:line': { primary: 'Claude', secondary: ['ChatGPT'] },
+    '3dscreenshot:model': { primary: 'Claude', secondary: ['ChatGPT', 'NanoBanana/Gemini'] },
+    '3dscreenshot:animation': { primary: 'MidJourney', secondary: ['NanoBanana/Gemini'] },
+    
+    'line:render': { primary: 'MidJourney', secondary: ['Adobe Firefly'] },
+    'line:realistic': { primary: 'MidJourney', secondary: ['Adobe Firefly'] },
+    'line:sketch': { primary: 'Claude', secondary: ['ChatGPT'] },
+    'line:model': { primary: 'Claude', secondary: ['ChatGPT', 'NanoBanana/Gemini'] },
+    'line:animation': { primary: 'MidJourney', secondary: ['NanoBanana/Gemini'] },
+  };
+
+  const key = `${input}:${output}`;
+  return matrix[key] || null;
+};
+
+const updateRecommendations = () => {
+  const input = document.getElementById('input-select').value;
+  const output = document.getElementById('output-select').value;
+  const container = document.getElementById('recommendations');
+
+  if (!input || !output) {
+    container.innerHTML = '<div class="empty-state">Select both input and output to see recommendations</div>';
+    return;
+  }
+
+  const rec = getRecommendations(input, output);
+  if (!rec) {
+    container.innerHTML = '<div class="empty-state">No recommendations available</div>';
+    return;
+  }
+
+  let html = `<div class="ai-card primary">
+    <span class="ai-name">${rec.primary}</span>
+    <span class="ai-rank best">Best choice</span>
+  </div>`;
+
+  rec.secondary.forEach(ai => {
+    html += `<div class="ai-card secondary">
+      <span class="ai-name">${ai}</span>
+      <span class="ai-rank">Alternative</span>
+    </div>`;
+  });
+
+  container.innerHTML = html;
+};
+
+document.getElementById('input-select').addEventListener('change', updateRecommendations);
+document.getElementById('output-select').addEventListener('change', updateRecommendations);
+</script>
+</html>
